@@ -1,0 +1,8 @@
+numpy
+opencv-python
+scikit-learn
+moviepy
+tensorflow
+pytorch
+matplotlib
+pytest
