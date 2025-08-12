@@ -1,0 +1,9 @@
+numpy
+opencv-python
+moviepy
+openai-whisper
+transformers
+torch
+scikit-learn
+matplotlib
+pytest
