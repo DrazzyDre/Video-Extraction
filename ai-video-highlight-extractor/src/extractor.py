@@ -8,6 +8,10 @@ class VideoExtractor:
         self.scene_threshold = scene_threshold
 
     def extract_highlight_segments(self, video_path):
+        """
+        Detects scene change points in the video based on a simple pixel difference threshold.
+        Returns a list of (start_frame, end_frame) tuples.
+        """
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"Video file not found: {video_path}")
 
@@ -27,7 +31,7 @@ class VideoExtractor:
         # Add last frame as end of last scene
         scene_changes.append(len(frames) - 1)
 
-        # Create segments (start, end)
+        # Create segments (start_frame, end_frame)
         segments = []
         for i in range(len(scene_changes) - 1):
             start = scene_changes[i]
@@ -37,16 +41,31 @@ class VideoExtractor:
         return segments
     
     def extract_text_highlights(self, video_path, fps=30):
+        """
+        Extracts audio from each detected scene, transcribes it, and summarizes it.
+        Returns a list of text highlight dictionaries.
+        """
         segments = self.extract_highlight_segments(video_path)
         text_highlights = []
+
         for idx, (start, end) in enumerate(segments):
             audio_path = f"segment_{idx}.wav"
-            extract_audio_segment(video_path, start, end, fps, audio_path)
-            transcript = speech_to_text(audio_path)
-            summary = summarize_text(transcript)
-            text_highlights.append({
-                "start_frame": start,
-                "end_frame": end,
-                "summary": summary
-            })
+
+            # If old audio exists from a previous run, delete it first
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
+
+            try:
+                audio_path = extract_audio_segment(video_path, start, end, fps, audio_path)
+                transcript = speech_to_text(audio_path)
+                summary = summarize_text(transcript)
+                text_highlights.append({
+                    "start_frame": start,
+                    "end_frame": end,
+                    "summary": summary
+                })
+            except ValueError as e:
+                # No audio track found
+                print(f"Skipping segment {idx}: {e}")
+
         return text_highlights

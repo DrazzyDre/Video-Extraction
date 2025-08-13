@@ -1,7 +1,7 @@
 import sys
 import cv2
 import os
-from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy import VideoFileClip  # v2 direct import
 import whisper
 from transformers import pipeline
 import json
@@ -47,8 +47,12 @@ def extract_audio_segment(video_path, start_frame, end_frame, fps=30, output_aud
     """
     start_time = start_frame / fps
     end_time = end_frame / fps
-    clip = VideoFileClip(video_path).subclip(start_time, end_time)
-    clip.audio.write_audiofile(output_audio_path)
+    with VideoFileClip(video_path) as clip:  # safer file handling
+        segment = clip.subclip(start_time, end_time)  # v2 method name
+        if segment.audio:
+            segment.audio.write_audiofile(output_audio_path)
+        else:
+            raise ValueError("No audio track found in the video segment.")
     return output_audio_path
 
 def speech_to_text(audio_path):
